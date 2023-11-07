@@ -46,7 +46,7 @@ def summarize_job(description):
             response_format={"type": "json_object"},
         )
         return response.choices[0].message["content"]
-    except openai.error.OpenAIError as e:
+    except Exception as e:
         st.error(f"An error occurred with OpenAI: {e}")
         return None
 
