@@ -55,6 +55,10 @@ def summarize_job(description):
 def main():
     st.title("Job Search and Summary")
 
+    st.write(
+        "This app uses the SerpApi (Google jobs) and OpenAI APIs to search for jobs and summarize the job description in JSON format."
+    )
+
     # User input for job search
     query = st.text_input("Job Title", "Python ir35")
     location = st.text_input("Location", "London")
