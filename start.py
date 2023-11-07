@@ -58,8 +58,8 @@ def main():
     st.title("Job Search with SerpApi and Summary with OpenAI")
 
     # User input for job search
-    query = st.text_input("Job Title", "Software Engineer")
-    location = st.text_input("Location", "New York")
+    query = st.text_input("Job Title", "Python ir35")
+    location = st.text_input("Location", "London")
 
     # When the 'Search' button is clicked, perform the job search and summarize
     if st.button("Search"):
