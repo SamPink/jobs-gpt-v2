@@ -1,37 +1,38 @@
 import streamlit as st
 import openai
 from serpapi import GoogleSearch
-
 import os
 
+# Load API keys from environment variables
 openai_key = os.getenv("OPENAI_API_KEY")
 serpapi_key = os.getenv("SERPAPI_API_KEY")
 
+if not openai_key or not serpapi_key:
+    raise EnvironmentError(
+        "Missing API keys. Please set OPENAI_API_KEY and SERPAPI_API_KEY."
+    )
 
-# Function to perform the job search
-def job_search(query, location, serpapi_key):
-    params = {
-        "engine": "google_jobs",
-        "q": query,
-        "location": location,
-        "hl": "en",
-        "api_key": serpapi_key,
-    }
-
-    search = GoogleSearch(params)
-    results = search.get_dict()
-    return results.get("jobs_results", [])
+# Initialize OpenAI with the API key
+openai.api_key = openai_key
 
 
-# Function to summarize job descriptions using OpenAI
-def summarize_job(job_details, openai_key):
-    # Initialize OpenAI with the API key
-    openai.api_key = openai_key
+def get_job_details(job):
+    try:
+        return {
+            "title": job.get("title", "No Title"),
+            "company_name": job.get("company_name", "No Company Name"),
+            "location": job.get("location", "No Location"),
+            "description": job.get("description", "No Description"),
+        }
+    except Exception as e:
+        st.error(f"An error occurred while fetching job details: {e}")
+        return None
 
-    # Generate a summary using GPT-4
+
+def summarize_job(description):
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4-1106-preview",  # Make sure to use the appropriate model ID
+            model="gpt-4-1106-preview",
             messages=[
                 {
                     "role": "system",
@@ -39,23 +40,20 @@ def summarize_job(job_details, openai_key):
                 },
                 {
                     "role": "user",
-                    "content": f"Here is the job description: {job_details}",
+                    "content": f"Here is the job description: {description}",
                 },
             ],
-            response_format={"type": "json_object"},  # Enable JSON mode
+            response_format={"type": "json_object"},
         )
-        summary = response.choices[0].message[
-            "content"
-        ]  # Access the content key in the JSON response
-        return summary
+        return response.choices[0].message["content"]
     except openai.error.OpenAIError as e:
         st.error(f"An error occurred with OpenAI: {e}")
-        return "No summary available."
+        return None
 
 
 # Streamlit app
 def main():
-    st.title("Job Search with SerpApi and Summary with OpenAI")
+    st.title("Job Search and Summary")
 
     # User input for job search
     query = st.text_input("Job Title", "Python ir35")
@@ -63,23 +61,31 @@ def main():
 
     # When the 'Search' button is clicked, perform the job search and summarize
     if st.button("Search"):
-        if serpapi_key and openai_key:
-            jobs = job_search(query, location, serpapi_key)
-            if jobs:
-                for job in jobs:
-                    st.subheader(job.get("title", "No Title"))
-                    st.write("Company:", job.get("company_name", "No Company Name"))
-                    st.write("Location:", job.get("location", "No Location"))
-                    job_details = job.get("description", "No Description")
-                    summary = summarize_job(job_details, openai_key)
+        try:
+            search = GoogleSearch(
+                {
+                    "engine": "google_jobs",
+                    "q": query,
+                    "location": location,
+                    "hl": "en",
+                    "api_key": serpapi_key,
+                }
+            )
+            jobs = search.get_dict().get("jobs_results", [])
+        except Exception as e:
+            st.error(f"An error occurred during search: {e}")
+            return
+
+        for job in jobs:
+            job_details = get_job_details(job)
+            if job_details:
+                st.subheader(job_details["title"])
+                st.write("Company:", job_details["company_name"])
+                st.write("Location:", job_details["location"])
+                summary = summarize_job(job_details["description"])
+                if summary:
                     st.json(summary)  # Display the JSON summary in a formatted way
-                    st.write("---")
-            else:
-                st.error(
-                    "No jobs found or there was an error in the search. Please try again."
-                )
-        else:
-            st.error("Please enter valid SerpApi and OpenAI API Keys.")
+                st.write("---")
 
 
 if __name__ == "__main__":
