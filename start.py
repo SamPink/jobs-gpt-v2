@@ -5,7 +5,7 @@ import os
 
 # Load API keys from environment variables
 openai_key = os.getenv("OPENAI_API_KEY")
-serpapi_key = os.getenv("SERPAPI_API_KEY")
+serpapi_key = os.getenv("SERP_API_KEY")
 
 if not openai_key or not serpapi_key:
     raise EnvironmentError(
