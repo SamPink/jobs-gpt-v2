@@ -70,8 +70,8 @@ def main():
         """
         This app uses the [OpenAI API](https://platform.openai.com/docs/overview) to summarize job descriptions and CVs, 
         and the [SerpAPI](https://serpapi.com/) to search for jobs.
-        Once you click the 'Search Jobs' button, the app will search for jobs using the SerpAPI, and summarize the job description using the OpenAI API.
-        After this an evaluation will be performed on the CV and job description using the OpenAI API (below the job description).
+        Once you click the 'Search Jobs' button, the app will search for jobs using the SerpAPI, and summarize the job description.
+        After this an evaluation will be performed on the CV and job description using the (below the job description).
         """
     )
 
