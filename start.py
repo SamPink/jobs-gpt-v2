@@ -1,95 +1,82 @@
 import streamlit as st
-import openai
-from serpapi import GoogleSearch
-import os
-
-# Load API keys from environment variables
-openai_key = os.getenv("OPENAI_API_KEY")
-serpapi_key = os.getenv("SERP_API_KEY")
-
-if not openai_key or not serpapi_key:
-    raise EnvironmentError(
-        "Missing API keys. Please set OPENAI_API_KEY and SERPAPI_API_KEY."
-    )
-
-# Initialize OpenAI with the API key
-openai.api_key = openai_key
+from apis import OpenAIClient, SerpAPIClient
 
 
 def get_job_details(job):
-    try:
-        return {
-            "title": job.get("title", "No Title"),
-            "company_name": job.get("company_name", "No Company Name"),
-            "location": job.get("location", "No Location"),
-            "description": job.get("description", "No Description"),
-        }
-    except Exception as e:
-        st.error(f"An error occurred while fetching job details: {e}")
-        return None
+    return {
+        "title": job.get("title", "No Title"),
+        "company_name": job.get("company_name", "No Company Name"),
+        "location": job.get("location", "No Location"),
+        "description": job.get("description", "No Description"),
+    }
 
 
-def summarize_job(description):
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4-1106-preview",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful assistant. Please summarize the following job description in JSON format. try to break down the real world requirements of the job in a structured way",
-                },
-                {
-                    "role": "user",
-                    "content": f"Here is the job description: {description}",
-                },
-            ],
-            response_format={"type": "json_object"},
-        )
-        return response.choices[0].message["content"]
-    except Exception as e:
-        st.error(f"An error occurred with OpenAI: {e}")
-        return None
+def display_job_and_evaluate_cv(openai_client, job_details, user_cv):
+    # check the user has entered a CV
+    if not user_cv:
+        st.warning("Please paste your CV above before searching.")
+        return
+    with st.container():
+        st.write("Job Title:", job_details["title"])
+        st.write("Company Name:", job_details["company_name"])
+        st.write("Location:", job_details["location"])
+        summary = openai_client.summarize_job(job_details["description"])
+        if summary:
+            st.json(summary)
+
+        # No button needed here, evaluation is done automatically
+        evaluation = openai_client.cv_job_match(user_cv, job_details["description"])
+        if evaluation:
+            st.markdown("### Evaluation Results")
+            st.markdown(evaluation)
 
 
-# Streamlit app
 def main():
-    st.title("Job Search and Summary")
+    st.title("Job Search, Summary, and CV Evaluation")
 
-    st.write(
-        "This app uses the SerpApi (Google jobs) and OpenAI APIs to search for jobs and summarize the job description in JSON format."
-    )
+    openai_client = OpenAIClient()
+    serpapi_client = SerpAPIClient()
 
     # User input for job search
-    query = st.text_input("Job Title", "Python ir35")
+    query = st.text_input("Job Title", "Python Developer")
     location = st.text_input("Location", "London")
+    user_cv = st.text_area("Paste your CV here", height=300)
 
-    # When the 'Search' button is clicked, perform the job search and summarize
-    if st.button("Search"):
+    session_state = st.session_state
+    if "current_job_index" not in session_state:
+        session_state.current_job_index = 0
+    if "jobs" not in session_state:
+        session_state.jobs = []
+
+    # Search button and results handling
+    if st.button("Search Jobs"):
+        if not user_cv:
+            st.warning("Please paste your CV above before searching.")
+            return
         try:
-            search = GoogleSearch(
-                {
-                    "engine": "google_jobs",
-                    "q": query,
-                    "location": location,
-                    "hl": "en",
-                    "api_key": serpapi_key,
-                }
-            )
-            jobs = search.get_dict().get("jobs_results", [])
+            results = serpapi_client.search_jobs(query, location)
+            session_state.jobs = results
+            session_state.current_job_index = 0
+            if not results:
+                st.info("No jobs found. Try different search criteria.")
+                return
+            job_details = get_job_details(results[session_state.current_job_index])
+            display_job_and_evaluate_cv(openai_client, job_details, user_cv)
         except Exception as e:
             st.error(f"An error occurred during search: {e}")
-            return
 
-        for job in jobs:
-            job_details = get_job_details(job)
-            if job_details:
-                st.subheader(job_details["title"])
-                st.write("Company:", job_details["company_name"])
-                st.write("Location:", job_details["location"])
-                summary = summarize_job(job_details["description"])
-                if summary:
-                    st.json(summary)  # Display the JSON summary in a formatted way
-                st.write("---")
+    # Next Job button
+    if st.button("Next Job"):
+        if session_state.jobs and (
+            session_state.current_job_index + 1 < len(session_state.jobs)
+        ):
+            session_state.current_job_index += 1
+            job_details = get_job_details(
+                session_state.jobs[session_state.current_job_index]
+            )
+            display_job_and_evaluate_cv(openai_client, job_details, user_cv)
+        else:
+            st.info("You've reached the end of the job list.")
 
 
 if __name__ == "__main__":

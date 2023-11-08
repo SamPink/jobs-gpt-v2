@@ -1,0 +1,7 @@
+myenv/***
+__pycache__/***
+test.py
+.env
+cv_summary.json
+cv.txt
+summarise_cv.py
