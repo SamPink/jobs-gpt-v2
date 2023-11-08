@@ -96,8 +96,19 @@ class SerpAPIClient:
                     "location": location,
                     "hl": "en",
                     "api_key": self.serpapi_key,
+                    "chips": "date_posted:week",
                 }
             )
             return search.get_dict().get("jobs_results", [])
         except Exception as e:
             raise e
+
+    def get_apply_link(self, job_id: str) -> str:
+        search = GoogleSearch(
+            {
+                "engine": "google_jobs_listing",
+                "q": job_id,
+                "api_key": os.environ.get("SERP_API_KEY"),
+            }
+        )
+        return search.get_dict().get("apply_options", [{}])[0].get("link", "")
