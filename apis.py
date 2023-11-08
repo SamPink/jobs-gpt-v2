@@ -33,6 +33,26 @@ class OpenAIClient:
         except Exception as e:
             raise e
 
+    def summarize_cv(self, cv):
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4-1106-preview",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant. Please summarize the following CV in JSON format. try to break down the real world requirements of the job in a structured way",
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Here is the CV: {cv}",
+                    },
+                ],
+                response_format={"type": "json_object"},
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            raise e
+
     def cv_job_match(self, cv, job_description):
         try:
             response = self.client.chat.completions.create(
@@ -46,6 +66,7 @@ class OpenAIClient:
                             "Consider skills, experience, qualifications, and cultural fit. "
                             "Provide a score for each category and an overall score."
                             "Be harsh, the job market is competitive, if the candidate has missing skills they are not going to get the job!"
+                            "return a json object with the scores for each category and an overall score along with some feedback for the candidate."
                         ),
                     },
                     {
@@ -53,6 +74,7 @@ class OpenAIClient:
                         "content": f"Please evaluate the following CV against the job description: {job_description}\n\nCV: {cv}",
                     },
                 ],
+                response_format={"type": "json_object"},
             )
             return response.choices[0].message.content
         except Exception as e:

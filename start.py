@@ -24,11 +24,11 @@ def display_job_and_evaluate_cv(openai_client, job_details, user_cv):
         if summary:
             st.json(summary)
 
-        # No button needed here, evaluation is done automatically
-        evaluation = openai_client.cv_job_match(user_cv, job_details["description"])
+        cv = openai_client.summarize_cv(user_cv)
+        evaluation = openai_client.cv_job_match(cv, summary)
         if evaluation:
             st.markdown("### Evaluation Results")
-            st.markdown(evaluation)
+            st.json(evaluation)
 
 
 def main():
