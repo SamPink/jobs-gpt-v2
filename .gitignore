@@ -1,8 +1,7 @@
 myenv/***
 __pycache__/***
-test.py
 .env
-cv_summary.json
-cv.txt
+.vscode/***
+data/***
 summarise_cv.py
-.vscode/PythonImportHelper-v2-Completion.json
+test.py
