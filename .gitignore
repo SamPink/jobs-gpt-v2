@@ -1,7 +1,8 @@
 myenv/***
-__pycache__/***
+***/__pycache__/***
 .env
 .vscode/***
 data/***
 summarise_cv.py
 test.py
+Untitled-1.ipynb

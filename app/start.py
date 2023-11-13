@@ -1,5 +1,6 @@
 import streamlit as st
 from apis import OpenAIClient, SerpAPIClient
+from match import evaluate_cv, EvaluationResponse
 
 openai_client = OpenAIClient()
 serpapi_client = SerpAPIClient()
@@ -12,31 +13,51 @@ def get_job_details(job):
         "location": job.get("location", "No Location"),
         "description": job.get("description", "No Description"),
         "apply_link": serpapi_client.get_apply_link(job.get("job_id")),
+        # Assuming thumbnail URL is part of the job dictionary
+        "thumbnail": job.get("thumbnail", "https://via.placeholder.com/150"),
     }
 
 
 def display_job_and_evaluate_cv(job_details, user_cv):
-    # check the user has entered a CV
     if not user_cv:
         st.warning("Please paste your CV above before searching.")
         return
+
+    # Card for job details
     with st.container():
-        st.write("Job Title:", job_details["title"])
-        st.write("Company Name:", job_details["company_name"])
-        st.write("Location:", job_details["location"])
+        st.image(job_details["thumbnail"], width=100)
+        st.markdown(f"### {job_details['title']} at {job_details['company_name']}")
+        st.markdown(f"📍 {job_details['location']}")
         st.markdown(
             f"[Apply Here]({job_details['apply_link']})", unsafe_allow_html=True
         )
-        summary = openai_client.summarize_job(job_details["description"])
-        st.markdown("### Job Summary")
-        if summary:
-            st.json(summary)
+        # st.markdown("#### Job Description")
+        # st.write(job_details["description"])
 
-        cv = openai_client.summarize_cv(user_cv)
-        evaluation = openai_client.cv_job_match(cv, summary)
-        if evaluation:
-            st.markdown("### Evaluation Results")
-            st.json(evaluation)
+    # Evaluate the CV against the job description
+    evaluation: EvaluationResponse = evaluate_cv(job_details["description"], user_cv)
+
+    # Overall Score highlighted
+    st.subheader("Overall Score")
+    st.progress(evaluation.overall_score / 100)
+    st.caption(f"{evaluation.overall_score}")
+
+    # Non-editable feedback display
+    st.subheader("Feedback")
+    st.write(evaluation.feedback)
+    st.write("Matching Skills: ", evaluation.matching_skills)
+    st.write("Missing Skills: ", evaluation.missing_skills)
+
+    # Display the evaluation
+    st.subheader("Candidate Evaluation")
+    st.progress(evaluation.score_skills / 100)
+    st.caption(f"Skills Score: {evaluation.score_skills}")
+    st.progress(evaluation.score_experience / 100)
+    st.caption(f"Experience Score: {evaluation.score_experience}")
+    st.progress(evaluation.score_qualifications / 100)
+    st.caption(f"Qualifications Score: {evaluation.score_qualifications}")
+    st.progress(evaluation.score_cultural_fit / 100)
+    st.caption(f"Cultural Fit Score: {evaluation.score_cultural_fit}")
 
 
 def extract_text_from_pdf(pdf_file):
