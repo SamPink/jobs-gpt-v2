@@ -120,14 +120,19 @@ def main():
             st.warning("Please paste your CV above before searching.")
             return
         try:
-            results = serpapi_client.search_jobs(query, location)
-            session_state.jobs = results
-            session_state.current_job_index = 0
-            if not results:
-                st.info("No jobs found. Try different search criteria.")
-                return
-            job_details = get_job_details(results[session_state.current_job_index])
-            display_job_and_evaluate_cv(job_details, user_cv_text)
+            with st.spinner("Finding you a job..."):
+                extracted_skills = openai_client.extract_skills_from_cv(user_cv_text)
+                # Combine extracted skills with the original query
+                enhanced_query = f"{query} {' '.join(extracted_skills)}"
+
+                results = serpapi_client.search_jobs(query, location, enhanced_query)
+                session_state.jobs = results
+                session_state.current_job_index = 0
+                if not results:
+                    st.info("No jobs found. Try different search criteria.")
+                    return
+                job_details = get_job_details(results[session_state.current_job_index])
+                display_job_and_evaluate_cv(job_details, user_cv_text)
         except Exception as e:
             st.error(f"An error occurred during search: {e}")
 
