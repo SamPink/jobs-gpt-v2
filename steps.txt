@@ -1,0 +1,8 @@
+# build the container
+docker build -t jobs-gpt:latest .
+# tag the container
+docker tag jobs-gpt:latest jobsgpt.azurecr.io/jobs-gpt:latest
+# push the container
+docker push jobsgpt.azurecr.io/jobs-gpt:latest
+# update the app with the new container
+az webapp config container set --name jobsgpt-api --resource-group incregen --docker-custom-image-name jobsgpt.azurecr.io/jobs-gpt:v2

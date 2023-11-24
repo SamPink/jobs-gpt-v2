@@ -2,7 +2,8 @@ from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel, Field
 import instructor
 from app.azure_gpt import get_client
-
+from app.apis import SerpAPIClient
+import os
 
 class CVRequest(BaseModel):
     job_description: str
@@ -30,6 +31,11 @@ class EvaluationResponse(BaseModel):
     missing_skills: list = Field(
         ..., description="List of skills that the candidate is missing for the job"
     )
+
+class JobSearchRequest(BaseModel):
+    query: str
+    location: str
+    chips_filters: str = None  # Optional, depending on your requirements
 
 
 client = instructor.patch(get_client())
@@ -72,8 +78,28 @@ def evaluate_cv(job_description, cv):
 def evaluate_cv_endpoint(cv_request: CVRequest, background_tasks: BackgroundTasks):
     return evaluate_cv(cv_request.job_description, cv_request.cv)
 
+@app.post("/search-jobs")
+def search_jobs_endpoint(job_search_request: JobSearchRequest):
+    try:
+        # Create an instance of SerpAPIClient
+        serp_api_client = SerpAPIClient()
+
+        # Call the search_jobs method
+        results = serp_api_client.search_jobs(
+            query=job_search_request.query,
+            location=job_search_request.location,
+            chips_filters=job_search_request.chips_filters
+        )
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app)
+    # Get the PORT from environment variable or default to 8000
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

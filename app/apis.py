@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import json
 
 import logging
-from azure_gpt import get_client
+from app.azure_gpt import get_client
 
 logging.basicConfig(level=logging.INFO)
 
