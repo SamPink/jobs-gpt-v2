@@ -1,7 +1,7 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel, Field
 import instructor
-from azure_gpt import get_client
+from app.azure_gpt import get_client
 
 
 class CVRequest(BaseModel):
