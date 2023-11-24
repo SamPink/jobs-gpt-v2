@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import json
 
 import logging
+from azure_gpt import get_client
 
 logging.basicConfig(level=logging.INFO)
 
@@ -13,10 +14,7 @@ load_dotenv()
 
 class OpenAIClient:
     def __init__(self):
-        self.openai_key = os.getenv("OPENAI_API_KEY")
-        if not self.openai_key:
-            raise EnvironmentError("Please set OPENAI_API_KEY environment variable.")
-        self.client = OpenAI(api_key=self.openai_key)
+        self.client = get_client()
 
     def _create_chat_completion(
         self, messages, model="gpt-3.5-turbo-1106", return_json=False, seed=420

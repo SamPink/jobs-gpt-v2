@@ -1,8 +1,7 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel, Field
-import asyncio
 import instructor
-from openai import AsyncOpenAI
+from azure_gpt import get_client
 
 
 class CVRequest(BaseModel):
@@ -33,8 +32,7 @@ class EvaluationResponse(BaseModel):
     )
 
 
-# Patch the OpenAI client for asynchronous use
-async_client = instructor.apatch(AsyncOpenAI())
+client = instructor.patch(get_client())
 
 app = FastAPI()
 
@@ -50,14 +48,14 @@ system_message = (
 )
 
 
-async def async_evaluate_cv(job_description, cv):
+def evaluate_cv(job_description, cv):
     user_message = f"""
     Job Description: {job_description}
     ---
     CV: {cv}
     """
     try:
-        response = await async_client.chat.completions.create(
+        response = client.chat.completions.create(
             model="gpt-4-1106-preview",
             response_model=EvaluationResponse,
             messages=[
@@ -71,10 +69,8 @@ async def async_evaluate_cv(job_description, cv):
 
 
 @app.post("/evaluate-cv", response_model=EvaluationResponse)
-async def evaluate_cv_endpoint(
-    cv_request: CVRequest, background_tasks: BackgroundTasks
-):
-    return await async_evaluate_cv(cv_request.job_description, cv_request.cv)
+def evaluate_cv_endpoint(cv_request: CVRequest, background_tasks: BackgroundTasks):
+    return evaluate_cv(cv_request.job_description, cv_request.cv)
 
 
 if __name__ == "__main__":

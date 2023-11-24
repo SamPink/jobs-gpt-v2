@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 # load dotenv
 from dotenv import load_dotenv
+from azure_gpt import get_client
 
 load_dotenv()
 
@@ -32,7 +33,7 @@ class EvaluationResponse(BaseModel):
 
 
 # Patch the OpenAI client
-client = instructor.patch(OpenAI())
+client = instructor.patch(get_client())
 
 system_message = (
     "You are a recruiter. "
