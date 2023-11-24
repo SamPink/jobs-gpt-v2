@@ -10,4 +10,4 @@ COPY ./app /code/app
 
 EXPOSE 50505
 
-ENTRYPOINT ["gunicorn", "app:backend"]
+ENTRYPOINT ["gunicorn", "backend:app"]
