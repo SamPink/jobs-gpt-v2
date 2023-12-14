@@ -5,6 +5,7 @@ from app.azure_gpt import get_client
 from app.apis import SerpAPIClient
 import os
 
+
 class CVRequest(BaseModel):
     job_description: str
     cv: str
@@ -32,6 +33,7 @@ class EvaluationResponse(BaseModel):
         ..., description="List of skills that the candidate is missing for the job"
     )
 
+
 class JobSearchRequest(BaseModel):
     query: str
     location: str
@@ -41,6 +43,20 @@ class JobSearchRequest(BaseModel):
 client = instructor.patch(get_client())
 
 app = FastAPI()
+
+# CORS setup, use * for now
+from fastapi.middleware.cors import CORSMiddleware
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 system_message = (
     "You are a recruiter. "
@@ -78,6 +94,7 @@ def evaluate_cv(job_description, cv):
 def evaluate_cv_endpoint(cv_request: CVRequest, background_tasks: BackgroundTasks):
     return evaluate_cv(cv_request.job_description, cv_request.cv)
 
+
 @app.post("/search-jobs")
 def search_jobs_endpoint(job_search_request: JobSearchRequest):
     try:
@@ -88,13 +105,11 @@ def search_jobs_endpoint(job_search_request: JobSearchRequest):
         results = serp_api_client.search_jobs(
             query=job_search_request.query,
             location=job_search_request.location,
-            chips_filters=job_search_request.chips_filters
+            chips_filters=job_search_request.chips_filters,
         )
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
 
 
 if __name__ == "__main__":
