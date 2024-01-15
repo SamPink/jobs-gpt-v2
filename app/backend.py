@@ -44,6 +44,12 @@ client = instructor.patch(get_client())
 
 app = FastAPI()
 
+# update the app name
+app.title = "AI Recruiter"
+
+# update the app description
+app.description = "AI Recruiter is an AI-powered recruitment tool that helps recruiters and hiring managers to evaluate candidates and search for jobs."
+
 # CORS setup, use * for now
 from fastapi.middleware.cors import CORSMiddleware
 
